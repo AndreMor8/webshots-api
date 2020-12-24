@@ -1,4 +1,4 @@
-require("dotenv").config();
+require("dotenv").config({ path: __dirname + "/.env" });
 const puppeteer = require("puppeteer");
 const express = require("express");
 const deepai = require("deepai");
