@@ -28,13 +28,14 @@ app.use(express.json());
     });
 
     app.post("/ss", async (req, res) => {
+        let page;
         try {
             if (!req.body.url) return res.status(400).send("Oye manda un URL primero");
             if (!/https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()!@:%_\+.~#?&\/\/=]*)/gm.test(req.body.url)) return res.status(400).send("This is a invalid URL.");
             if (!req.body.nsfw) {
                 if (await checkSingleCleanURL(req.body.url)) return res.status(401).send("NSFW content has been detected in the generated image. If you want to see it, ask for it on a NSFW channel.");
             }
-            const page = await browser.newPage();
+            page = await browser.newPage();
             await page.goto(req.body.url, { waitUntil: "networkidle2" });
             const options = { x: req.body.x, y: req.body.y };
             if (options && !isNaN(options.x) && !isNaN(options.y)) {
@@ -54,6 +55,8 @@ app.use(express.json());
             res.send(screenshot);
         } catch (err) {
             res.status(500).send("Some error ocurred! " + err.toString());
+        } finally {
+            if(page) page.close();
         }
     });
 
