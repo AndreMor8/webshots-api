@@ -1,0 +1,23 @@
+{
+  "name": "puppeteer-api",
+  "version": "1.0.0",
+  "description": "para que mi bot pueda usar 1 sola instancia de puppeteer no importa cuantos shards tenga",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 0",
+    "start": "node server.js"
+  },
+  "keywords": [
+    "puppeteer",
+    "api"
+  ],
+  "author": "AndreMor#0008",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "deepai": "^1.0.16",
+    "dotenv": "^8.2.0",
+    "express": "^4.17.1",
+    "is-porn": "^0.9.0",
+    "puppeteer": "^5.5.0"
+  }
+}
