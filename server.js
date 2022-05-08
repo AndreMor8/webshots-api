@@ -25,19 +25,20 @@ app.use(express.json());
             headless: true, defaultViewport: {
                 width: parseInt(process.env.WIDTH),
                 height: parseInt(process.env.HEIGHT)
-            }, args: ["--disable-gpu", "--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage"],
+            }, args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage"],
             executablePath: process.env.CHROME_BIN || null
         }).then(async (browser) => {
             try {
                 if (!req.body.url) return res.status(400).send("Oye manda un URL primero");
-                if (!/https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()!@:%_\+.~#?&\/\/=]*)/gm.test(req.body.url)) return res.status(400).send("This is a invalid URL.");
+                const url = getURL(req.body.url);
+                if (!url) return res.status(400).send("This is a invalid URL.");
                 if (!req.body.nsfw) {
-                    if (checkCleanURL(req.body.url)) return res.status(401).send("NSFW content has been detected in the generated image. If you want to see it, ask for it on a NSFW channel.");
+                    if (checkCleanURL(url)) return res.status(401).send("NSFW content has been detected in the generated image. If you want to see it, ask for it on a NSFW channel.");
                 }
                 const page = await browser.newPage();
                 const response = await page.goto(req.body.url, { waitUntil: "networkidle2" });
-                if(!req.body.nsfw) {
-                    if(checkCleanURL(response.url())) return res.status(401).send("NSFW content has been detected in the generated image. If you want to see it, ask for it on a NSFW channel.");
+                if (!req.body.nsfw) {
+                    if (checkCleanURL(response.url())) return res.status(401).send("NSFW content has been detected in the generated image. If you want to see it, ask for it on a NSFW channel.");
                 }
                 const options = { x: req.body.x, y: req.body.y };
                 if (options && !isNaN(options.x) && !isNaN(options.y)) {
@@ -69,3 +70,13 @@ app.use(express.json());
         console.log("Listening on port " + listener.address().port);
     });
 })();
+
+function getURL(url) {
+    try {
+        const final = new URL(url);
+        if (!(["http:", "https:"].includes(final.protocol))) return null;
+        return final.href;
+    } catch {
+        return null;
+    }
+}
