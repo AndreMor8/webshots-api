@@ -58,11 +58,12 @@ app.use(express.json());
                 const options = { x: req.body.x, y: req.body.y };
                 if (options && !isNaN(options.x) && !isNaN(options.y)) {
                     screenshot = await page.screenshot({
+						animations: "disabled",
                         clip: { x: parseInt(options.x), y: parseInt(options.y), width: parseInt(process.env.WIDTH), height: parseInt(process.env.HEIGHT) },
                         type: "png"
                     });
                 } else {
-                    screenshot = await page.screenshot({ type: "png" });
+                    screenshot = await page.screenshot({ animations: "disabled", type: "png" });
                 }
                 if (!req.body.nsfw) {
                     const results = await deepai.callStandardApi("nsfw-detector", { image: screenshot });
