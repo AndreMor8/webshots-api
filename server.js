@@ -49,7 +49,7 @@ app.use(express.json());
         defaultBrowser.newContext({ acceptDownloads: false, colorScheme: 'dark' }).then(async (context) => {
             try {
                 const page = await context.newPage();
-                const response = await page.goto(req.body.url, { waitUntil: req.body.waitUntil || 'domcontentloaded' });
+                const response = await page.goto(req.body.url, { waitUntil: req.body.waitUntil || 'load' });
                 if (!req.body.nsfw) {
                     if (checkCleanURL(response.url())) return res.status(401).send("NSFW content has been detected in the generated image. If you want to see it, ask for it on a NSFW channel.");
                 }
@@ -58,12 +58,11 @@ app.use(express.json());
                 const options = { x: req.body.x, y: req.body.y };
                 if (options && !isNaN(options.x) && !isNaN(options.y)) {
                     screenshot = await page.screenshot({
-                        animations: "disabled",
                         clip: { x: parseInt(options.x), y: parseInt(options.y), width: parseInt(process.env.WIDTH), height: parseInt(process.env.HEIGHT) },
                         type: "png"
                     });
                 } else {
-                    screenshot = await page.screenshot({ animations: "disabled", type: "png" });
+                    screenshot = await page.screenshot({ type: "png" });
                 }
                 if (!req.body.nsfw) {
                     const results = await deepai.callStandardApi("nsfw-detector", { image: screenshot });
