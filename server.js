@@ -39,7 +39,7 @@ app.use(express.json());
     });
 
     app.post("/ss", (req, res) => {
-        if (req.body.waitUntil && !(['load', 'domcontentloaded', 'networkidle'].includes(req.body.waitUntil))) return res.status(400).send("manda bien cuando esperar pue");
+        if (req.body.waitUntil && !(['load', 'domcontentloaded', 'networkidle', 'commit'].includes(req.body.waitUntil))) return res.status(400).send("manda bien cuando esperar pue");
         if (!req.body.url) return res.status(400).send("Oye manda un URL primero");
         const url = getURL(req.body.url);
         if (!url) return res.status(400).send("This is a invalid URL.");
