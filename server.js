@@ -39,6 +39,7 @@ app.use(express.json());
     });
 
     app.post("/ss", (req, res) => {
+        if (req.body.waitUntil && !(['load', 'domcontentloaded', 'networkidle'].includes(req.body.waitUntil))) return res.status(400).send("manda bien cuando esperar pue");
         if (!req.body.url) return res.status(400).send("Oye manda un URL primero");
         const url = getURL(req.body.url);
         if (!url) return res.status(400).send("This is a invalid URL.");
@@ -48,7 +49,7 @@ app.use(express.json());
         defaultBrowser.newContext({ acceptDownloads: false, colorScheme: 'dark' }).then(async (context) => {
             try {
                 const page = await context.newPage();
-                const response = await page.goto(req.body.url, { waitUntil: 'networkidle' });
+                const response = await page.goto(req.body.url, { waitUntil: req.body.waitUntil || 'domcontentloaded' });
                 if (!req.body.nsfw) {
                     if (checkCleanURL(response.url())) return res.status(401).send("NSFW content has been detected in the generated image. If you want to see it, ask for it on a NSFW channel.");
                 }
