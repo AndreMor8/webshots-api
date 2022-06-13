@@ -1,7 +1,7 @@
 //dotenv
 require("dotenv").config({ path: __dirname + "/.env" });
 //dependencies
-const puppeteer = require("puppeteer-core");
+const { chromium } = require("playwright");
 const express = require("express");
 const deepai = require("deepai");
 deepai.setApiKey(process.env.DEEPAI);
@@ -13,15 +13,15 @@ app.use(express.json());
 
 (async () => {
 
-    const defaultBrowser = await puppeteer.launch({
+    const defaultBrowser = await chromium.launch({
         headless: true,
         defaultViewport: {
             width: parseInt(process.env.WIDTH),
             height: parseInt(process.env.HEIGHT)
         },
-        args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage"],
+        chromiumSandbox: false,
+        args: ["--disable-dev-shm-usage"],
         executablePath: process.env.CHROME_BIN || null,
-        waitForInitialPage: false
     });
 
     defaultBrowser.on("disconnected", process.exit);
@@ -45,10 +45,10 @@ app.use(express.json());
         if (!req.body.nsfw) {
             if (checkCleanURL(url)) return res.status(401).send("NSFW content has been detected in the generated image. If you want to see it, ask for it on a NSFW channel.");
         }
-        defaultBrowser.createIncognitoBrowserContext().then(async (context) => {
+        defaultBrowser.newContext({ acceptDownloads: false, colorScheme: 'dark' }).then(async (context) => {
             try {
                 const page = await context.newPage();
-                const response = await page.goto(req.body.url, { waitUntil: ["load", "domcontentloaded", "networkidle0", "networkidle2"] });
+                const response = await page.goto(req.body.url, { waitUntil: 'networkidle' });
                 if (!req.body.nsfw) {
                     if (checkCleanURL(response.url())) return res.status(401).send("NSFW content has been detected in the generated image. If you want to see it, ask for it on a NSFW channel.");
                 }
@@ -57,11 +57,12 @@ app.use(express.json());
                 const options = { x: req.body.x, y: req.body.y };
                 if (options && !isNaN(options.x) && !isNaN(options.y)) {
                     screenshot = await page.screenshot({
+                        animations: "disabled",
                         clip: { x: parseInt(options.x), y: parseInt(options.y), width: parseInt(process.env.WIDTH), height: parseInt(process.env.HEIGHT) },
                         type: "png"
                     });
                 } else {
-                    screenshot = await page.screenshot({ type: "png" });
+                    screenshot = await page.screenshot({ animations: "disabled", type: "png" });
                 }
                 if (!req.body.nsfw) {
                     const results = await deepai.callStandardApi("nsfw-detector", { image: screenshot });
