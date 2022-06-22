@@ -15,10 +15,6 @@ app.use(express.json());
 
     const defaultBrowser = await chromium.launch({
         headless: true,
-        defaultViewport: {
-            width: parseInt(process.env.WIDTH),
-            height: parseInt(process.env.HEIGHT)
-        },
         chromiumSandbox: false,
         args: ["--disable-dev-shm-usage"],
         executablePath: process.env.CHROME_BIN || null,
@@ -46,7 +42,7 @@ app.use(express.json());
         if (!req.body.nsfw) {
             if (checkCleanURL(url)) return res.status(401).send("NSFW content has been detected in the generated image. If you want to see it, ask for it on a NSFW channel.");
         }
-        defaultBrowser.newContext({ acceptDownloads: false, colorScheme: 'dark' }).then(async (context) => {
+        defaultBrowser.newContext({ acceptDownloads: false, colorScheme: 'dark', viewport: { width: parseInt(process.env.WIDTH), height: parseInt(process.env.HEIGHT) } }).then(async (context) => {
             try {
                 const page = await context.newPage();
                 const response = await page.goto(req.body.url, { waitUntil: req.body.waitUntil || 'load' });
@@ -54,17 +50,12 @@ app.use(express.json());
                     if (checkCleanURL(response.url())) return res.status(401).send("NSFW content has been detected in the generated image. If you want to see it, ask for it on a NSFW channel.");
                 }
                 if (req.body.delay) await page.waitForTimeout(req.body.delay * 1000 || 0);
-                let screenshot;
-                const options = { x: req.body.x, y: req.body.y };
-                if (options && !isNaN(options.x) && !isNaN(options.y)) {
-                    screenshot = await page.screenshot({
-						animations: "disabled",
-                        clip: { x: parseInt(options.x), y: parseInt(options.y), width: parseInt(process.env.WIDTH), height: parseInt(process.env.HEIGHT) },
-                        type: "png"
-                    });
-                } else {
-                    screenshot = await page.screenshot({ animations: "disabled", type: "png" });
-                }
+                const screenshot = await page.screenshot({
+                    animations: "disabled",
+                    clip: { x: parseInt(req.body.x), y: parseInt(req.body.y), width: parseInt(process.env.WIDTH), height: parseInt(process.env.HEIGHT) },
+                    type: "png",
+                    fullPage: true
+                });;
                 if (!req.body.nsfw) {
                     const results = await deepai.callStandardApi("nsfw-detector", { image: screenshot });
                     if (results.output.nsfw_score > 0.4) return res.status(401).send("NSFW content has been detected in the generated image. If you want to see it, ask for it on a NSFW channel.");
