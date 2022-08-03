@@ -24,7 +24,7 @@ app.use(express.json());
 
     app.use((req, res, next) => {
         if (req.headers["auth-token"] === process.env.TOKEN) next();
-        else res.status(403).send("Nope no puedes usar esta API");
+        else res.status(403).send({ code: 43, message: "unauthorized" });
     })
 
     app.get("/", (req, res) => {
@@ -35,19 +35,19 @@ app.use(express.json());
     });
 
     app.post("/ss", (req, res) => {
-        if (req.body.waitUntil && !(['load', 'domcontentloaded', 'networkidle', 'commit'].includes(req.body.waitUntil))) return res.status(400).send("manda bien cuando esperar pue");
-        if (!req.body.url) return res.status(400).send("Oye manda un URL primero");
+        if (req.body.waitUntil && !(['load', 'domcontentloaded', 'networkidle', 'commit'].includes(req.body.waitUntil))) return res.status(400).send({ code: 400, message: "invalid wait time" });
+        if (!req.body.url) return res.status(400).send({ code: 400, message: "invalid uri" });
         const url = getURL(req.body.url);
-        if (!url) return res.status(400).send("This is a invalid URL.");
+        if (!url) return res.status(400).send({ code: 400, message: "invalid uri" });
         if (!req.body.nsfw) {
-            if (checkCleanURL(url)) return res.status(401).send("NSFW content has been detected in the generated image. If you want to see it, ask for it on a NSFW channel.");
+            if (checkCleanURL(url)) return res.status(401).send({ code: 401, message: "unappropiate content detected, run again in safe channel" });
         }
         defaultBrowser.newContext({ acceptDownloads: false, colorScheme: 'dark', viewport: { width: parseInt(process.env.WIDTH), height: parseInt(process.env.HEIGHT) } }).then(async (context) => {
             try {
                 const page = await context.newPage();
                 const response = await page.goto(req.body.url, { waitUntil: req.body.waitUntil || 'load' });
                 if (!req.body.nsfw) {
-                    if (checkCleanURL(response.url())) return res.status(401).send("NSFW content has been detected in the generated image. If you want to see it, ask for it on a NSFW channel.");
+                    if (checkCleanURL(response.url())) return res.status(401).send({ code: 401, message: "unappropiate content detected, run again in safe channel" });
                 }
                 if (req.body.delay) await page.waitForTimeout(req.body.delay * 1000 || 0);
                 const screenshot = await page.screenshot({
@@ -58,7 +58,7 @@ app.use(express.json());
                 });;
                 if (!req.body.nsfw) {
                     const results = await deepai.callStandardApi("nsfw-detector", { image: screenshot });
-                    if (results.output.nsfw_score > 0.4) return res.status(401).send("NSFW content has been detected in the generated image. If you want to see it, ask for it on a NSFW channel.");
+                    if (results.output.nsfw_score > 0.4) return res.status(401).send({ code: 401, message: "unappropiate content detected, run again in safe channel" });
                 }
                 res.setHeader("Content-Type", "image/png");
                 res.status(200).send(screenshot);
@@ -71,7 +71,7 @@ app.use(express.json());
         });
     });
 
-    app.use("/ss", (req, res) => res.status(405).send("Oye no seas loco es con un POST"));
+    app.use("/ss", (req, res) => res.status(405).send({ code: 405, message: "invalid method" }));
 
     const listener = app.listen(process.env.PORT, () => {
         console.log("Listening on port " + listener.address().port);
