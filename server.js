@@ -17,7 +17,7 @@ app.use(express.json());
         headless: true,
         chromiumSandbox: false,
         args: ["--disable-dev-shm-usage"],
-        executablePath: process.env.CHROME_BIN || null,
+        executablePath: process.env.CHROME_BIN || undefined,
     });
 
     defaultBrowser.on("disconnected", process.exit);
