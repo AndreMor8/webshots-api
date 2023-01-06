@@ -74,7 +74,6 @@ app.use(express.json());
                 await context.close();
             }
         }).catch(err => {
-            console.log(err);
             res.status(500).send(err.message || err.toString?.() || err || "Unknown error");
         });
     });
