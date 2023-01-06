@@ -65,7 +65,7 @@ app.use(express.json());
                     const predictions = await model.classify(tocheck);
                     tocheck.dispose();
                     const score = predictions.find(e => e.className === 'Porn').probability + predictions.find(e => e.className === 'Hentai').probability + predictions.find(e => e.className === 'Sexy').probability;
-                    if (score >= 0.2) return res.status(401).send("NSFW content has been detected in the generated image. If you want to see it, ask for it on a NSFW channel.");
+                    if (score >= 0.4) return res.status(401).send("NSFW content has been detected in the generated image. If you want to see it, ask for it on a NSFW channel.");
                 }
                 res.setHeader("Content-Type", "image/png");
                 res.status(200).send(screenshot);
