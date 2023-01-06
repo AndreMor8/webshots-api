@@ -1,6 +1,6 @@
 {
   "name": "puppeteer-api",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "para que mi bot pueda usar 1 sola instancia de puppeteer no importa cuantos shards tenga",
   "main": "server.js",
   "scripts": {
@@ -11,12 +11,14 @@
     "puppeteer",
     "api"
   ],
+  "type": "module",
   "author": "AndreMor#0008",
   "license": "Apache-2.0",
   "dependencies": {
-    "deepai": "1.0.17",
+    "@tensorflow/tfjs-node": "^3.21.1",
     "dotenv": "^16.0.1",
     "express": "^4.18.1",
+    "nsfwjs": "^2.4.2",
     "playwright": "^1.22.2"
   }
 }

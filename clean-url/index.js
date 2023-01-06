@@ -1,6 +1,6 @@
-const data = require('./assets/sites.json');
+import data from './assets/sites.json' assert {type: 'json'};
 // methods to be exported
-module.exports = (urlFromReq) => {
+export default (urlFromReq) => {
     let parsedUrl = new URL(urlFromReq);
     let host = parsedUrl.host || parsedUrl.pathname.trim().split("/")[0];
     if (host in data) return true;

@@ -1,17 +1,20 @@
 //dotenv
-require("dotenv").config({ path: __dirname + "/.env" });
+import 'dotenv/config.js';
 //dependencies
-const { chromium } = require("playwright");
-const express = require("express");
-const deepai = require("deepai");
-deepai.setApiKey(process.env.DEEPAI);
-const checkCleanURL = require("./clean-url/index.js");
+import path from 'path';
+import { chromium } from "playwright";
+import express from 'express';
+import checkCleanURL from "./clean-url/index.js";
+//nsfw
+import tf from '@tensorflow/tfjs-node';
+import nsfwjs from 'nsfwjs';
 
 //app
 const app = express();
 app.use(express.json());
 
 (async () => {
+    const model = await nsfwjs.load(`https://nsfwjs.com/model/`, { size: 299 });;
 
     const defaultBrowser = await chromium.launch({
         headless: true,
@@ -55,10 +58,14 @@ app.use(express.json());
                     clip: { x: parseInt(req.body.x), y: parseInt(req.body.y), width: parseInt(process.env.WIDTH), height: parseInt(process.env.HEIGHT) },
                     type: "png",
                     fullPage: true
-                });;
+                });
+
                 if (!req.body.nsfw) {
-                    const results = await deepai.callStandardApi("nsfw-detector", { image: screenshot });
-                    if (results.output.nsfw_score > 0.4) return res.status(401).send("NSFW content has been detected in the generated image. If you want to see it, ask for it on a NSFW channel.");
+                    const tocheck = await tf.node.decodeImage(screenshot, 3);
+                    const predictions = await model.classify(tocheck);
+                    tocheck.dispose();
+                    const score = predictions.find(e => e.className === 'Porn').probability + predictions.find(e => e.className === 'Hentai').probability + predictions.find(e => e.className === 'Sexy').probability;
+                    if (score >= 0.2) return res.status(401).send("NSFW content has been detected in the generated image. If you want to see it, ask for it on a NSFW channel.");
                 }
                 res.setHeader("Content-Type", "image/png");
                 res.status(200).send(screenshot);
@@ -67,13 +74,14 @@ app.use(express.json());
                 await context.close();
             }
         }).catch(err => {
+            console.log(err);
             res.status(500).send(err.message || err.toString?.() || err || "Unknown error");
         });
     });
 
     app.use("/ss", (req, res) => res.status(405).send("Oye no seas loco es con un POST"));
 
-    const listener = app.listen(process.env.PORT, () => {
+    const listener = app.listen(process.env.PORT, async () => {
         console.log("Listening on port " + listener.address().port);
     });
 })();
